@@ -1,0 +1,71 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
+plugins {
+    id 'java'
+    id 'com.vanniktech.maven.publish' version '0.28.0'
+    id 'signing'
+}
+
+group = 'io.github.tricatch'
+version = '0.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.79'
+    implementation 'org.bouncycastle:bcutil-jdk18on:1.79'
+}
+
+javadoc {
+    options {
+        encoding 'UTF-8'
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications
+}
+
+mavenPublishing {
+
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    coordinates("io.github.tricatch", "gotpache-keytool", "0.1.0")
+
+    pom {
+        name = "gotpache-keytool"
+        description = "SSL Root and Domain Certificate KeyTool"
+        inceptionYear = "2024"
+        url = "https://github.com/tricatch"
+        licenses {
+            license {
+                name = "MIT License"
+                url = "https://github.com/tricatch/gotpache-keytool/blob/main/LICENSE"
+                distribution = "https://github.com/tricatch/gotpache-keytool/blob/main/LICENSE"
+            }
+        }
+        developers {
+            developer {
+                id = "tricatch"
+                name = "Yongwoo Kim"
+                url = "https://github.com/tricatch"
+            }
+        }
+        scm {
+            url = "https://github.com/tricatch"
+            connection = "scm:git:git://github.com/tricatch"
+            developerConnection = "scm:git:ssh://git@github.com/tricatch"
+        }
+    }
+}
