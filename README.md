@@ -56,6 +56,31 @@ foo.kr.key
    * bcprov-jdk18on-1.79.jar
    * bcutil-jdk18on-1.79.jar
 
+## 어플리케이션에서 동적으로 인증서를 생성
+<pre>
+RootCertificateCreator rootCertificateCreator = new RootCertificateCreator();
+SSLCertificateCreator sslCertificateCreator = new SSLCertificateCreator();
+
+//루트인증서 생성
+CertificateKeyPair rootCert = rootCertificateCreator.generateRootCertificate("MyCA");
+
+//SSL 인증서 생성
+CertificateKeyPair sslCert = sslCertificateCreator.generateSSLCertificate("foo.kr", rootCert.getCertificate(), rootCert.getPrivateKey());
+
+KeyTool keyTool = new KeyTool();
+
+//파일로 저장하기
+keyTool.writeCertificate(sslCert.getCertificate(), path, fCa);
+keyTool.writePublicKey(sslCert.getPublicKey(), path, fPubKey);
+keyTool.writePrivateKey(sslCert.getPrivateKey(), path, fPriKey);
+keyTool.writePrivateKey(sslCert.getPrivateKey(), "password", path, fPriKeyEnc);
+
+//파일에서 읽기
+X509Certificate certificate = keyTool.readCertificate(path, fCa);
+PublicKey publicKey = keyTool.readPublicKey(path, fPubKey);
+PrivateKey privateKey = keyTool.readPrivateKey(path, fPriKey);
+PrivateKey privateKeyEnc = keyTool.readPrivateKey(path, fPriKeyEnc, "password" );
+</pre>
 
 ## 라이선스
 이 프로젝트는 MIT 라이선스를 따릅니다. 자세한 내용은 LICENSE 파일을 확인하세요.
