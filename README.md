@@ -11,7 +11,15 @@
 * SSL 인증서 발급
 
 
-## gradle
+## 사용법
+1. 단독으로 실행하여 루트, 도메인인증서를 생성하는 경우
+<pre>
+KeyTool Usage
+-root {rootAlias} {rootPwd}
+-ssl  {rootAlias} {rootPwd} {sslDomain} {sslPwd}
+</pre>
+
+2. 프로젝트에 라이브러리로 사용하는 경우(gradle)
 <pre>
 dependencies {
 
@@ -19,6 +27,34 @@ dependencies {
 
 }
 </pre>
+
+## KeyTool을 이용한 셀프사인 인증서 생성
+
+1. 루트인증서 생성
+<pre>
+java -cp ./lib/* io.github.tricatch.gotpache.cert.KeyTool -root MyCA password
+
+--- root certificate / privateKey ---
+MyCA.crt
+MyCA.key
+</pre>
+
+
+2. 도메인인증서 생성
+<pre>
+java -cp ./lib/* io.github.tricatch.gotpache.cert.KeyTool -ssl MyCA password foo.kr passwo
+rd
+--- ssl certificate / privateKey ---
+foo.kr.crt
+foo.kr.key
+</pre>
+
+#### Required
+실행할 위치에 lib 폴더를 생성하고 Maven Repository에서 다운로드한다.
+   * gotpache-keytool-0.1.0.jar
+   * bcpkix-jdk18on-1.79.jar
+   * bcprov-jdk18on-1.79.jar
+   * bcutil-jdk18on-1.79.jar
 
 
 ## 라이선스
