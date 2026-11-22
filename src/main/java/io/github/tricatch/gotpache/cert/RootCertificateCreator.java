@@ -42,7 +42,7 @@ public class RootCertificateCreator {
 
             X500Name rootCN = new X500Name("CN=" + rootAlias);
 
-            BigInteger serialNo = new BigInteger(Long.toString(new SecureRandom().nextLong()));
+            BigInteger serialNo = CertRef.newSerialNumber();
             Date startDt = new Date(System.currentTimeMillis() - CertRef.DAY_MSEC);
             Date endDt = new Date(startDt.getTime() + (CertRef.DAY_MSEC * CertRef.DAY_FOR_CA));
 

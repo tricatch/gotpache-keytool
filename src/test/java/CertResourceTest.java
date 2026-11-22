@@ -1,9 +1,11 @@
 import io.github.tricatch.gotpache.cert.CertificateKeyPair;
 import io.github.tricatch.gotpache.cert.KeyTool;
+import io.github.tricatch.gotpache.cert.RootCertificateCreator;
 import io.github.tricatch.gotpache.cert.SSLCertificateCreator;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -18,13 +20,24 @@ public class CertResourceTest {
         String fPubKey = "pub.key";
         String fPriKey = "pri.key";
         String fPriKeyEnc = "priEnc.key";
+        String fRootCert = "root.crt";
+        String fRootKey = "root.key";
+        Path resources = null;
 
         try {
 
             KeyTool keyTool = new KeyTool();
 
-            X509Certificate rootCert = keyTool.readCertificate(CertResourceTest.class, "localtest/haha.crt");
-            PrivateKey rootPrivateKey = keyTool.readPrivateKey(CertResourceTest.class, "localtest/haha.key", "pwd");
+            // A new root each run, on the classpath only while it runs: never commit a private key.
+            Path classpathRoot = Paths.get(CertResourceTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            resources = Files.createTempDirectory(classpathRoot, "localtest");
+            CertificateKeyPair root = new RootCertificateCreator().generateRootCertificate("Test Root");
+            keyTool.writeCertificate(root.getCertificate(), resources.toString(), fRootCert);
+            keyTool.writePrivateKey(root.getPrivateKey(), "pwd", resources.toString(), fRootKey);
+
+            String prefix = resources.getFileName() + "/";
+            X509Certificate rootCert = keyTool.readCertificate(CertResourceTest.class, prefix + fRootCert);
+            PrivateKey rootPrivateKey = keyTool.readPrivateKey(CertResourceTest.class, prefix + fRootKey, "pwd");
 
             SSLCertificateCreator sslCertificateCreator = new SSLCertificateCreator();
 
@@ -70,6 +83,11 @@ public class CertResourceTest {
             delete(path, fPubKey);
             delete(path, fPriKey);
             delete(path, fPriKeyEnc);
+            if (resources != null) {
+                delete(resources.toString(), fRootCert);
+                delete(resources.toString(), fRootKey);
+                delete(resources.toString(), "");
+            }
         }
     }
 

@@ -3,9 +3,13 @@ package io.github.tricatch.gotpache.cert;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -35,7 +39,8 @@ public class SSLCertificateCreator {
 
     /**
      * Generate an SSL certificate.
-     * @param domain Domain for the SSL certificate (e.g., foo.kr, www.foo.kr)
+     * @param domain Domain for the SSL certificate (e.g., foo.kr, www.foo.kr). It is always put in the SAN;
+     *               it is the common name too only when it fits in 64 characters.
      * @param rootCertificate Root certificate for issuing SSL certificate
      * @param rootPrivateKey Root private key for signing the SSL certificate.
      * @return Return the certificate, public key, and private key as the response.
@@ -47,10 +52,15 @@ public class SSLCertificateCreator {
 
             initProvider();
 
-            X500Name sslCN = new X500Name("CN=" + domain);
-            X500Name rootCN = new X500Name(rootCertificate.getIssuerDN().getName());
+            // A builder, not a parsed "CN=..." string, so the domain cannot add attributes of its own.
+            X500Name sslCN = new X500NameBuilder(BCStyle.INSTANCE)
+                    .addRDN(BCStyle.CN, domain.length() > CertRef.MAX_COMMON_NAME_LENGTH
+                            ? CertRef.LONG_DOMAIN_COMMON_NAME : domain)
+                    .build();
+            // The encoded subject of the signer: going through its string form reverses the RDN order.
+            X500Name rootCN = X500Name.getInstance(rootCertificate.getSubjectX500Principal().getEncoded());
 
-            BigInteger serialNo = new BigInteger(Long.toString(new SecureRandom().nextLong()));
+            BigInteger serialNo = CertRef.newSerialNumber();
             Date startDt = new Date(System.currentTimeMillis() - CertRef.DAY_MSEC);
             Date endDt = new Date(startDt.getTime() + (CertRef.DAY_MSEC * CertRef.DAY_FOR_SSL));
 
@@ -106,7 +116,13 @@ public class SSLCertificateCreator {
             issuedCertBuilder.addExtension(
                     Extension.keyUsage
                     , false
-                    , new KeyUsage(KeyUsage.digitalSignature)
+                    , new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment)
+            );
+
+            issuedCertBuilder.addExtension(
+                    Extension.extendedKeyUsage
+                    , false
+                    , new ExtendedKeyUsage(KeyPurposeId.id_kp_serverAuth)
             );
 
             issuedCertBuilder.addExtension(
